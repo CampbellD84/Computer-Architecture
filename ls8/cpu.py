@@ -13,7 +13,7 @@ import sys
 #  X properties in CPU class
 #  X ram_read()
 #  X ram_write()
-#  run()
+#  X run()
 #  HLT
 #  LDI
 #  PRN
@@ -41,6 +41,12 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
         self.ram = [0] * 256
+        # TEMP until full implementation
+        self.cmds = {
+            "LDI": 0b10000010,
+            "PRN": 0b01000111,
+            "HLT": 0b00000001
+        }
 
     def load(self):
         """Load a program into memory."""
@@ -100,4 +106,20 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        prog_count = self.pc
+        is_cpu_running = True
+        while is_cpu_running is True:
+            instruct_reg = self.ram[prog_count]
+            arg_A = self.ram[prog_count + 1]
+            arg_B = self.ram[prog_count + 2]
+            if instruct_reg == self.cmds["LDI"]:
+                self.reg[arg_A] = arg_B
+                prog_count += 3
+            elif instruct_reg == self.cmds["PRN"]:
+                print(self.reg[arg_A])
+                prog_count += 2
+            elif instruct_reg == self.cmds["HLT"]:
+                is_cpu_running = False
+            else:
+                print("Error!")
+                sys.exit(1)
