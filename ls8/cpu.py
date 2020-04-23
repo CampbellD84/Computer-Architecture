@@ -11,8 +11,8 @@ import sys
 ### Needs to be implemented or removed: ##
 # DAY 1:
 #  X properties in CPU class
-#  ram_read()
-#  ram_write()
+#  X ram_read()
+#  X ram_write()
 #  run()
 #  HLT
 #  LDI
@@ -91,6 +91,12 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
+
+    def ram_read(self, MAR):
+        return self.ram[MAR]
+
+    def ram_write(self, MAR, MDR):
+        self.ram[MAR] = MDR
 
     def run(self):
         """Run the CPU."""
