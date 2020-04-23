@@ -14,9 +14,9 @@ import sys
 #  X ram_read()
 #  X ram_write()
 #  X run()
-#  HLT
-#  LDI
-#  PRN
+#  X HLT
+#  X LDI
+#  X PRN
 
 # DAY 2:
 # remove hardcoded programs
