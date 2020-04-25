@@ -19,9 +19,9 @@ import sys
 #  X PRN
 
 # DAY 2:
-# remove hardcoded programs
-# implement load()
-# MUL
+# X remove hardcoded programs
+# X implement load()
+# X MUL
 
 # DAY 3:
 # Clean up run()
@@ -42,32 +42,32 @@ class CPU:
         self.pc = 0
         self.ram = [0] * 256
         # TEMP until full implementation
-        self.cmds = {
-            "LDI": 0b10000010,
-            "PRN": 0b01000111,
-            "HLT": 0b00000001
-        }
+        # self.cmds = {
+        #     "LDI": 0b10000010,
+        #     "PRN": 0b01000111,
+        #     "HLT": 0b00000001
+        # }
 
-    def load(self):
+    def load(self, name_of_file):
         """Load a program into memory."""
+        try:
+            address = 0
+            with open(name_of_file) as f:
+                for ln in f:
+                    split_cmt = ln.split("#")
+                    num_str = split_cmt[0].strip()
 
-        address = 0
+                    if num_str == '':
+                        continue
 
-        # For now, we've just hardcoded a program:
+                    num_val = int(num_str)
+                    num_val = eval(f"0b{num_val}")
+                    self.ram_write(address, num_val)
+                    address += 1
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        except FileNotFoundError:
+            print(f'{sys.argv[0]}: could not find {sys.argv[1]}')
+            sys.exit(1)
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -109,17 +109,21 @@ class CPU:
         prog_count = self.pc
         is_cpu_running = True
         while is_cpu_running is True:
-            instruct_reg = self.ram[prog_count]
-            arg_A = self.ram[prog_count + 1]
-            arg_B = self.ram[prog_count + 2]
-            if instruct_reg == self.cmds["LDI"]:
+            instruct_reg = self.ram_read(prog_count)
+            arg_A = self.ram_read(prog_count + 1)
+            arg_B = self.ram_read(prog_count + 2)
+            if instruct_reg == 0b10000010:
                 self.reg[arg_A] = arg_B
                 prog_count += 3
-            elif instruct_reg == self.cmds["PRN"]:
+            elif instruct_reg == 0b01000111:
                 print(self.reg[arg_A])
                 prog_count += 2
-            elif instruct_reg == self.cmds["HLT"]:
+            elif instruct_reg == 0b10100010:
+                mult_result = self.reg[arg_A] * self.reg[arg_B]
+                self.reg[arg_A] = mult_result
+                prog_count += 3
+            elif instruct_reg == 0b10100010:
                 is_cpu_running = False
             else:
-                print("Error!")
-                sys.exit(1)
+                # raise Exception(f"Instruction {instruct_reg} doesn't exist")
+                sys.exit()
