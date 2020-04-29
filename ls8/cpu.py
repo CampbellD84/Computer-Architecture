@@ -2,6 +2,15 @@
 
 import sys
 
+LDI = 0b10000010
+PRN = 0b01000111
+HLT = 0b00000001
+ADD = 0b10100011
+SUB = 0b10100011
+MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
+
 ###  INVENTORY OF FILES ###
 
 # cpu.py - CPU class and methods
@@ -24,8 +33,8 @@ import sys
 # X MUL
 
 # DAY 3:
-# Clean up run()
-# System Stack
+# X Clean up run()
+# X System Stack
 
 # DAY 4:
 # implement CALL and RET
@@ -39,24 +48,20 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.reg = [0] * 8  # Register
+        self.reg[7] = 0xF4  # Stack Pointer, reg[7] reserved
         self.ram = [0] * 256  # Random Access Memory(RAM)
         self.pc = 0  # Program Count
-        self.sp = 7  # Stack Pointer, reg[7] reserved
-        self.reg[self.sp] = 0xF4
+        self.is_cpu_running = True
         # Implement Branchtable
         self.branch_table = {}
-        self.branch_table[0b10000010] = self.op_LDI
-        self.branch_table[0b01000111] = self.op_PRN
-        self.branch_table[0b10100010] = self.op_MUL
-        self.branch_table[0b00000001] = self.op_HLT
-        self.branch_table[0b01000101] = self.op_PUSH
-        self.branch_table[0b01000110] = self.op_POP
-        # TEMP until full implementation
-        # self.cmds = {
-        #     "LDI": 0b10000010,
-        #     "PRN": 0b01000111,
-        #     "HLT": 0b00000001
-        # }
+        self.branch_table[LDI] = self.op_LDI
+        self.branch_table[PRN] = self.op_PRN
+        self.branch_table[ADD] = self.op_ADD
+        self.branch_table[SUB] = self.op_SUB
+        self.branch_table[MUL] = self.op_MUL
+        self.branch_table[HLT] = self.op_HLT
+        self.branch_table[PUSH] = self.op_PUSH
+        self.branch_table[POP] = self.op_POP
 
     def load(self, name_of_file):
         """Load a program into memory."""
@@ -85,6 +90,10 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         # elif op == "SUB": etc
+        elif op == "SUB":
+            self.reg[reg_a] -= self.reg[reg_b]
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -114,61 +123,48 @@ class CPU:
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
 
-    def op_LDI(self):
-        arg_A = self.ram_read(self.pc + 1)
-        arg_B = self.ram_read(self.pc + 2)
+    def op_LDI(self, arg_A, arg_B):
         self.reg[arg_A] = arg_B
         self.pc += 3
 
-    def op_PRN(self):
-        arg_A = self.ram_read(self.pc + 1)
+    def op_PRN(self, arg_A, arg_B):
         print(self.reg[arg_A])
         self.pc += 2
 
-    def op_MUL(self):
-        arg_A = self.ram_read(self.pc + 1)
-        arg_B = self.ram_read(self.pc + 2)
-        mult_result = self.reg[arg_A] * self.reg[arg_B]
-        self.reg[arg_A] = mult_result
+    def op_ADD(self, arg_A, arg_B):
+        self.alu("ADD", arg_A, arg_B)
         self.pc += 3
 
-    def op_PUSH(self):
-        self.reg[self.sp] -= 1
-        register_num = self.ram[self.pc + 1]
-        val = self.reg[register_num]
-        self.ram[self.reg[self.sp]] = val
+    def op_SUB(self, arg_A, arg_B):
+        self.alu("SUB", arg_A, arg_B)
+        self.pc += 3
+
+    def op_MUL(self, arg_A, arg_B):
+        self.alu("MUL", arg_A, arg_B)
+        self.pc += 3
+
+    def op_PUSH(self, arg_A, arg_B):
+        self.reg[7] -= 1
+        val = self.reg[arg_A]
+        self.ram[self.reg[7]] = val
         self.pc += 2
 
-    def op_POP(self):
-        val = self.ram[self.reg[self.sp]]
-        register_num = self.ram[self.pc + 1]
-        self.reg[register_num] = val
-        self.reg[self.sp] += 1
+    def op_POP(self, arg_A, arg_B):
+        val = self.ram_read(self.reg[7])
+        self.reg[arg_A] = val
+        self.reg[7] += 1
         self.pc += 2
 
-    def op_HLT(self):
-        return False
+    def op_HLT(self, arg_A, arg_B):
+        self.is_cpu_running = False
 
     def run(self):
         """Run the CPU."""
-        prog_count = self.pc
-        is_cpu_running = True
-        while is_cpu_running is True:
-            instruct_reg = self.ram_read(prog_count)
-            arg_A = self.ram_read(prog_count + 1)
-            arg_B = self.ram_read(prog_count + 2)
-            if instruct_reg == 0b10000010:
-                self.reg[arg_A] = arg_B
-                prog_count += 3
-            elif instruct_reg == 0b01000111:
-                print(self.reg[arg_A])
-                prog_count += 2
-            elif instruct_reg == 0b10100010:
-                mult_result = self.reg[arg_A] * self.reg[arg_B]
-                self.reg[arg_A] = mult_result
-                prog_count += 3
-            elif instruct_reg == 0b10100010:
-                is_cpu_running = False
-            else:
-                # raise Exception(f"Instruction {instruct_reg} doesn't exist")
-                sys.exit()
+        while self.is_cpu_running:
+            instruct_reg = self.ram_read(self.pc)
+            arg_A = self.ram_read(self.pc + 1)
+            arg_B = self.ram_read(self.pc + 2)
+            try:
+                self.branch_table[instruct_reg](arg_A, arg_B)
+            except:
+                raise Exception(f"Command {instruct_reg} doesn't exist.")
