@@ -38,9 +38,19 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        self.reg = [0] * 8
-        self.pc = 0
-        self.ram = [0] * 256
+        self.reg = [0] * 8  # Register
+        self.ram = [0] * 256  # Random Access Memory(RAM)
+        self.pc = 0  # Program Count
+        self.sp = 7  # Stack Pointer, reg[7] reserved
+        self.reg[self.sp] = 0xF4
+        # Implement Branchtable
+        self.branch_table = {}
+        self.branch_table[0b10000010] = self.op_LDI
+        self.branch_table[0b01000111] = self.op_PRN
+        self.branch_table[0b10100010] = self.op_MUL
+        self.branch_table[0b00000001] = self.op_HLT
+        self.branch_table[0b01000101] = self.op_PUSH
+        self.branch_table[0b01000110] = self.op_POP
         # TEMP until full implementation
         # self.cmds = {
         #     "LDI": 0b10000010,
@@ -103,6 +113,41 @@ class CPU:
 
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
+
+    def op_LDI(self):
+        arg_A = self.ram_read(self.pc + 1)
+        arg_B = self.ram_read(self.pc + 2)
+        self.reg[arg_A] = arg_B
+        self.pc += 3
+
+    def op_PRN(self):
+        arg_A = self.ram_read(self.pc + 1)
+        print(self.reg[arg_A])
+        self.pc += 2
+
+    def op_MUL(self):
+        arg_A = self.ram_read(self.pc + 1)
+        arg_B = self.ram_read(self.pc + 2)
+        mult_result = self.reg[arg_A] * self.reg[arg_B]
+        self.reg[arg_A] = mult_result
+        self.pc += 3
+
+    def op_PUSH(self):
+        self.reg[self.sp] -= 1
+        register_num = self.ram[self.pc + 1]
+        val = self.reg[register_num]
+        self.ram[self.reg[self.sp]] = val
+        self.pc += 2
+
+    def op_POP(self):
+        val = self.ram[self.reg[self.sp]]
+        register_num = self.ram[self.pc + 1]
+        self.reg[register_num] = val
+        self.reg[self.sp] += 1
+        self.pc += 2
+
+    def op_HLT(self):
+        return False
 
     def run(self):
         """Run the CPU."""
