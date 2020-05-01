@@ -10,6 +10,8 @@ SUB = 0b10100011
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
 
 ###  INVENTORY OF FILES ###
 
@@ -62,6 +64,8 @@ class CPU:
         self.branch_table[HLT] = self.op_HLT
         self.branch_table[PUSH] = self.op_PUSH
         self.branch_table[POP] = self.op_POP
+        self.branch_table[CALL] = self.op_CALL
+        self.branch_table[RET] = self.op_RET
 
     def load(self, name_of_file):
         """Load a program into memory."""
