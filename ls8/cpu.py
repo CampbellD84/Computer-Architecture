@@ -159,6 +159,12 @@ class CPU:
         self.reg[7] += 1
         self.pc += 2
 
+    def op_CALL(self, arg_A, arg_B):
+        pass
+
+    def op_RET(self, arg_A, arg_B):
+        pass
+
     def op_HLT(self, arg_A, arg_B):
         self.is_cpu_running = False
 
