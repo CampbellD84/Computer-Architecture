@@ -5,8 +5,8 @@ import sys
 LDI = 0b10000010
 PRN = 0b01000111
 HLT = 0b00000001
-ADD = 0b10100011
-SUB = 0b10100011
+ADD = 0b10100000
+SUB = 0b10100001
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
@@ -39,8 +39,7 @@ RET = 0b00010001
 # X System Stack
 
 # DAY 4:
-# implement CALL and RET
-# Subroutine Calls
+# X implement CALL and RET
 
 
 ############################
@@ -160,10 +159,15 @@ class CPU:
         self.pc += 2
 
     def op_CALL(self, arg_A, arg_B):
-        pass
+        rtn_add = self.pc + 2
+        self.reg[7] -= 1
+        self.ram_write(self.reg[7], rtn_add)
+        self.pc = self.reg[arg_A]
 
     def op_RET(self, arg_A, arg_B):
-        pass
+        rtn_add = self.reg[7]
+        self.pc = self.ram_read(rtn_add)
+        self.reg[7] += 1
 
     def op_HLT(self, arg_A, arg_B):
         self.is_cpu_running = False
